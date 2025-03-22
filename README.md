@@ -37,17 +37,10 @@ This project is a Telegram bot that generates QR codes from URLs sent by users. 
     docker-compose up -d --build
     ```
 
-## Usage - Docker Compose
+4. Open Telegram and send a message to your bot with a URL. The bot will respond with a QR code image.
 
-1. Start the bot by running the Docker container:
-
-    ```sh
-    docker compose up -d --build
-    ```
-
-2. Open Telegram and send a message to your bot with a URL. The bot will respond with a QR code image.
-
-## Usage - docker run
+#### Usage - docker run
+If you prefer to use docker run sentence and build the image yourself follow the these steps:
 1. Build the image from Dockerfile:
     ```sh
     docker build -t qrcode_generator_bot .
