@@ -21,6 +21,3 @@ primary_region = 'mad'
   cpu_kind = 'shared'
   cpus = 1
   memory_mb = 1024
-  
-[scale]
-  count = 1
