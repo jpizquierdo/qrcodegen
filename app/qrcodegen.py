@@ -1,13 +1,9 @@
+from io import BytesIO
 import qrcode
-from PIL import Image
-from pydantic import BaseModel, HttpUrl
+from pydantic import AnyUrl, EmailStr
 
 
-class URLModel(BaseModel):
-    url: HttpUrl
-
-
-async def generate_qr_code(url: HttpUrl) -> Image:
+async def generate_url_qr(url: AnyUrl) -> BytesIO:
     # Create a QR code instance
     qr = qrcode.QRCode(
         version=1,  # controls the size of the QR Code
@@ -18,6 +14,36 @@ async def generate_qr_code(url: HttpUrl) -> Image:
     # Add the URL data
     qr.add_data(url)
     qr.make(fit=True)
-    qr_image = qr.make_image(fill="black", back_color="white")
+    qr = qr.make_image(fill="black", back_color="white")
+    buffer = BytesIO()
+    qr.save(buffer, format="PNG")
+    buffer.seek(0)
 
-    return qr_image
+    return buffer
+
+
+# Wi-Fi QR Code Generator
+async def generate_wifi_qr(ssid: str, password: str) -> BytesIO:
+    wifi_data = f"WIFI:T:WPA;S:{ssid};P:{password};;"
+    qr = qrcode.make(wifi_data)
+    buffer = BytesIO()
+    qr.save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer
+
+
+async def generate_contact_qr(
+    name: str,
+    surname: str,
+    phone_number: str,
+    email: EmailStr,
+    company: str = "",
+    title: str = "",
+    url: str = "",
+) -> BytesIO:
+    vcard = f"BEGIN:VCARD\nVERSION:3.0\nN:{surname};{name};;;\nTEL;CELL:{phone_number}\nEMAIL:{email}\nORG:{company}\nTITLE:{title}\nURL:{url}\nEND:VCARD"
+    qr = qrcode.make(vcard)
+    buffer = BytesIO()
+    qr.save(buffer, format="PNG")
+    buffer.seek(0)
+    return buffer

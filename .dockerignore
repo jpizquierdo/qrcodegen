@@ -1,0 +1,11 @@
+__pycache__
+.venv
+.env
+.env.example
+.ruff_cache
+.git
+.gitignore
+Dockerfile
+docker-compose.yaml
+README.md
+LICENSE
