@@ -1,6 +1,8 @@
 # QR Code Generator Telegram Bot
 
-This project is a Telegram bot that generates QR codes from URLs sent by users. The bot validates the URLs and returns a QR code image.
+This project is a Telegram bot that generates QR codes for URLs, WIFI auto-connection, visit card (vcard) and more sent by users. The bot validates the data and returns a QR code image.
+
+Bot deployment is currently on [Northflank](https://northflank.com), you can pay a visit directly in Telegram accessing the [qrcodegen-bot](https://t.me/qrcode_generator_jpizquierdo_bot).
 
 ## Features
 
@@ -37,7 +39,7 @@ This project is a Telegram bot that generates QR codes from URLs sent by users. 
     docker-compose up -d --build
     ```
 
-4. Open Telegram and send a message to your bot with a URL. The bot will respond with a QR code image.
+4. Open Telegram and send a message to your bot clicking in any button like a URL. The bot will respond with a QR code image.
 
 #### Usage - docker run
 If you prefer to use docker run sentence and build the image yourself follow the these steps:
@@ -49,7 +51,7 @@ If you prefer to use docker run sentence and build the image yourself follow the
     ```sh
     docker run --env TELEGRAM_TOKEN=your_secret_token -d qrcode_generator_bot
     ```
-3. Open Telegram and send a message to your bot with a URL. The bot will respond with a QR code image.
+3. Open Telegram and send a message to your bot clicking in any button like a URL. The bot will respond with a QR code image.
 
 ## Contributing
 
