@@ -2,7 +2,7 @@ from enum import StrEnum, unique
 from pydantic import BaseModel, AnyUrl, Field, EmailStr
 
 
-class URLModel(BaseModel):
+class URLQR(BaseModel):
     url: AnyUrl
 
 
@@ -10,8 +10,21 @@ class WiFiSSIDModel(BaseModel):
     ssid: str = Field(min_length=1, max_length=32)
 
 
+class WifiQR(WiFiSSIDModel):
+    password: str = Field(min_length=8, max_length=63)
+
+
 class EmailModel(BaseModel):
     email: EmailStr
+
+
+class ContactQR(EmailModel):
+    name: str
+    surname: str
+    phone_number: str
+    company: str | None = ""
+    title: str | None = ""
+    url: AnyUrl | None = ""
 
 
 # States for user interactions

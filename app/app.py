@@ -1,3 +1,9 @@
+import sys
+import os
+
+# to be able to import from app.*, as a package and not as a module
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import (
     ApplicationBuilder,
@@ -8,10 +14,16 @@ from telegram.ext import (
     CallbackQueryHandler,
 )
 from pydantic import ValidationError
-
-from core.config import settings, logger
-from core.models import URLModel, WiFiSSIDModel, UserState, EmailModel
-from qrcodegen import generate_url_qr, generate_wifi_qr, generate_contact_qr
+from app.core.config import settings, logger
+from app.core.models import (
+    URLQR,
+    WiFiSSIDModel,
+    UserState,
+    EmailModel,
+    WifiQR,
+    ContactQR,
+)
+from app.qrcodegen import generate_url_qr, generate_wifi_qr, generate_contact_qr
 
 
 # Start command
@@ -25,14 +37,10 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
 # Message handler for QR generation
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    # user_id = update.message.from_user.id
     user_state = context.user_data.get("state")
-
     if user_state == UserState.AWAITING_URL:
-        user_message = update.message.text.strip()
         try:
-            URLModel(url=user_message)  # Validation using Pydantic
-            qr_code = await generate_url_qr(user_message)
+            qr_code = await generate_url_qr(URLQR(url=update.message.text.strip()))
             # Send QR code image
             await update.message.reply_photo(
                 photo=qr_code, caption="Here is your QR code!"
@@ -53,8 +61,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             await command_options(update, context)
     elif user_state == UserState.AWAITING_SSID:
         try:
-            WiFiSSIDModel(ssid=update.message.text)  # Validation using Pydantic
-            context.user_data["ssid"] = update.message.text
+            wifi = WiFiSSIDModel(ssid=update.message.text)  # Validation using Pydantic
+            context.user_data["ssid"] = wifi.ssid
             context.user_data["state"] = UserState.AWAITING_PASSWORD
             await update.message.reply_text("Please send the Wi-Fi password:")
         except ValidationError:
@@ -69,14 +77,19 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             context.user_data.clear()
             await command_options(update, context)
     elif user_state == UserState.AWAITING_PASSWORD:
-        qr_code = await generate_wifi_qr(
-            ssid=context.user_data["ssid"], password=update.message.text
-        )
-        await update.message.reply_photo(
-            photo=qr_code, caption="📶 Scan to connect to Wi-Fi"
-        )
-        context.user_data.clear()
-        await command_options(update, context)
+        try:
+            qr_code = await generate_wifi_qr(
+                WifiQR(ssid=context.user_data["ssid"], password=update.message.text)
+            )
+            await update.message.reply_photo(
+                photo=qr_code, caption="📶 Scan to connect to Wi-Fi"
+            )
+            context.user_data.clear()
+            await command_options(update, context)
+        except ValidationError:
+            await update.message.reply_text(
+                "❌ Invalid SSID or Password. Please send a valid SSID (1-32 characters) and a Valid Password between 8 and 63 characters."
+            )
     elif user_state == UserState.AWAITING_NAME:
         context.user_data["name"] = update.message.text
         context.user_data["state"] = UserState.AWAITING_SURNAME
@@ -91,10 +104,10 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await update.message.reply_text("Please send the email:")
     elif user_state == UserState.AWAITING_EMAIL:
         try:
-            EmailModel(email=update.message.text)  # Validation using Pydantic
-            context.user_data["email"] = update.message.text
+            email = EmailModel(email=update.message.text)  # Validation using Pydantic
+            context.user_data["email"] = email.email
             context.user_data["state"] = UserState.AWAITING_COMPANY
-            await update.message.reply_text("Please send the company:")
+            await update.message.reply_text("Please send the company name:")
         except ValidationError:
             await update.message.reply_text(
                 "❌ Invalid email. Please send a valid email address."
@@ -115,15 +128,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data["state"] = UserState.AWAITING_WEBSITE
         await update.message.reply_text("Please send the URL 🔗:")
     elif user_state == UserState.AWAITING_WEBSITE:
-        url = update.message.text.strip()
         qr_code = await generate_contact_qr(
-            name=context.user_data["name"],
-            surname=context.user_data["surname"],
-            phone_number=context.user_data["phone_number"],
-            email=context.user_data["email"],
-            company=context.user_data["company"],
-            title=context.user_data["title"],
-            url=url,
+            ContactQR(
+                name=context.user_data["name"],
+                surname=context.user_data["surname"],
+                phone_number=context.user_data["phone_number"],
+                email=context.user_data["email"],
+                company=context.user_data["company"],
+                title=context.user_data["title"],
+                url=update.message.text.strip(),
+            )
         )
         await update.message.reply_photo(
             photo=qr_code, caption="📇 Scan to read de vcard 📞"
@@ -131,7 +145,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         context.user_data.clear()
         await command_options(update, context)
 
-    else:
+    else:  # pragma: no cover
+        logger.error("❌ Invalid state. Please try again.")
         await command_options(update, context)
 
 
@@ -147,9 +162,6 @@ async def command_options(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    # await update.message.reply_text(
-    #     "Choose an option below:", reply_markup=reply_markup
-    # )
     await context.bot.send_message(
         chat_id=update.effective_chat.id,
         text="Choose an option below:",
@@ -183,7 +195,7 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await start(update, context)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     application = ApplicationBuilder().token(settings.TELEGRAM_TOKEN).build()
 
     start_handler = CommandHandler(command="start", callback=start)
