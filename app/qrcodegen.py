@@ -1,9 +1,10 @@
 from io import BytesIO
 import qrcode
-from pydantic import AnyUrl, EmailStr
+
+from app.core.models import ContactQR, WifiQR, URLQR
 
 
-async def generate_url_qr(url: AnyUrl) -> BytesIO:
+async def generate_url_qr(url: URLQR) -> BytesIO:
     # Create a QR code instance
     qr = qrcode.QRCode(
         version=1,  # controls the size of the QR Code
@@ -12,7 +13,7 @@ async def generate_url_qr(url: AnyUrl) -> BytesIO:
         border=4,  # thickness of the border
     )
     # Add the URL data
-    qr.add_data(url)
+    qr.add_data(url.url)
     qr.make(fit=True)
     qr = qr.make_image(fill="black", back_color="white")
     buffer = BytesIO()
@@ -23,8 +24,8 @@ async def generate_url_qr(url: AnyUrl) -> BytesIO:
 
 
 # Wi-Fi QR Code Generator
-async def generate_wifi_qr(ssid: str, password: str) -> BytesIO:
-    wifi_data = f"WIFI:T:WPA;S:{ssid};P:{password};;"
+async def generate_wifi_qr(wifi: WifiQR) -> BytesIO:
+    wifi_data = f"WIFI:T:WPA;S:{wifi.ssid};P:{wifi.password};;"
     qr = qrcode.make(wifi_data)
     buffer = BytesIO()
     qr.save(buffer, format="PNG")
@@ -32,16 +33,8 @@ async def generate_wifi_qr(ssid: str, password: str) -> BytesIO:
     return buffer
 
 
-async def generate_contact_qr(
-    name: str,
-    surname: str,
-    phone_number: str,
-    email: EmailStr,
-    company: str = "",
-    title: str = "",
-    url: str = "",
-) -> BytesIO:
-    vcard = f"BEGIN:VCARD\nVERSION:3.0\nN:{surname};{name};;;\nTEL;CELL:{phone_number}\nEMAIL:{email}\nORG:{company}\nTITLE:{title}\nURL:{url}\nEND:VCARD"
+async def generate_contact_qr(contact: ContactQR) -> BytesIO:
+    vcard = f"BEGIN:VCARD\nVERSION:3.0\nN:{contact.surname};{contact.name};;;\nTEL;CELL:{contact.phone_number}\nEMAIL:{contact.email}\nORG:{contact.company}\nTITLE:{contact.title}\nURL:{contact.url}\nEND:VCARD"
     qr = qrcode.make(vcard)
     buffer = BytesIO()
     qr.save(buffer, format="PNG")

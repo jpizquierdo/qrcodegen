@@ -2,3 +2,9 @@ __pycache__
 .venv
 .env
 .ruff_cache
+htmlcov/
+pytest_cache/
+.coverage
+.egg-info/
+dist/
+build/
