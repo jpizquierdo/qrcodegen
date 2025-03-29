@@ -19,7 +19,28 @@ Bot deployment is currently on [Northflank](https://northflank.com), you can pay
 - Docker Compose
 
 ### Installation
+#### 📦 Pull the Image from Docker Hub
+1. Pull the image from Docker Hub:
+To get the latest version of `qrcodegen`, pull it from Docker Hub:  
+    ```sh
+    docker pull jpizquierdo/qrcodegen:latest
+    ```
+2. Run the container:
+    ```sh
+    docker run --env TELEGRAM_TOKEN=yourGodFatherFancyToken -d jpizquierdo/qrcodegen:latest
+    ```
+3. Or run the container with docker compose:
 
+    Create a `.env` file with your Telegram bot token (check `.env.example`):
+
+    ```env
+    TELEGRAM_TOKEN="your_telegram_bot_token"
+    ```
+    Execute:
+    ```sh
+    docker compose up -d
+    ```
+#### Build the image yourself
 1. Clone the repository:
 
     ```sh
@@ -36,7 +57,7 @@ Bot deployment is currently on [Northflank](https://northflank.com), you can pay
 3. Build and run the Docker containers:
 
     ```sh
-    docker-compose up -d --build
+    docker compose up -d --build
     ```
 
 4. Open Telegram and send a message to your bot clicking in any button like a URL. The bot will respond with a QR code image.

@@ -3,5 +3,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    container_name: qrcodegen
+    image: jpizquierdo/qrcodegen:latest
+    restart: unless-stopped
     environment:
       - TELEGRAM_TOKEN
