@@ -1,3 +1,21 @@
+# Exclude test-related files and directories
+pytest.ini
+requirements-test.txt
+tests/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Exclude build artifacts
+dist/
+build/
+*.egg-info/
+
+# Exclude cache and temporary files
+*.pyc
+*.pyo
+*.log
+
 __pycache__
 .venv
 .env
@@ -5,6 +23,7 @@ __pycache__
 .ruff_cache
 .git
 .gitignore
+.github
 Dockerfile
 docker-compose.yaml
 README.md
