@@ -4,7 +4,7 @@ from unittest.mock import AsyncMock, patch
 from app.app import handle_message
 from app.core.models import UserState, URLQR, WifiQR, ContactQR
 from app.qrcodegen import generate_wifi_qr, generate_contact_qr, generate_url_qr
-from pydantic import ValidationError
+
 
 @pytest.mark.asyncio
 async def test_handle_message_awaiting_url():
@@ -32,6 +32,7 @@ async def test_handle_message_awaiting_url():
         photo=actual_call, caption="Here is your QR code!"
     )
 
+
 @pytest.mark.asyncio
 async def test_handle_message_awaiting_url_invalid():
 
@@ -41,13 +42,15 @@ async def test_handle_message_awaiting_url_invalid():
     context.user_data = {"state": UserState.AWAITING_URL}
     test_url = "invalid-url.com"
     update.message.text = test_url
-    
+
     await handle_message(update, context)
-    assert(context.user_data["state"]==UserState.AWAITING_URL)
-        # Assert that the bot sends an error message
+    assert context.user_data["state"] == UserState.AWAITING_URL
+    # Assert that the bot sends an error message
     update.message.reply_text.assert_called_once_with(
         "❌ Invalid URL. Please send a valid URL starting with 'http://' or 'https://'."
     )
+
+
 @pytest.mark.asyncio
 async def test_handle_message_awaiting_ssid():
     # Mock Update and Context
@@ -66,6 +69,8 @@ async def test_handle_message_awaiting_ssid():
 
     # Assert that the state is updated
     assert context.user_data["state"] == UserState.AWAITING_PASSWORD
+
+
 @pytest.mark.asyncio
 async def test_handle_message_awaiting_ssid_invalid():
 
@@ -75,13 +80,14 @@ async def test_handle_message_awaiting_ssid_invalid():
     context.user_data = {"state": UserState.AWAITING_SSID}
     test_ssid = "TestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSID"
     update.message.text = test_ssid
-    
+
     await handle_message(update, context)
-    assert(context.user_data["state"]==UserState.AWAITING_SSID)
-        # Assert that the bot sends an error message
+    assert context.user_data["state"] == UserState.AWAITING_SSID
+    # Assert that the bot sends an error message
     update.message.reply_text.assert_called_once_with(
         "❌ Invalid SSID. Please send a valid SSID (1-32 characters)."
     )
+
 
 @pytest.mark.asyncio
 async def test_handle_message_awaiting_password():
@@ -110,6 +116,8 @@ async def test_handle_message_awaiting_password():
     assert context.user_data == {}
     # Assert by content
     assert update.message.reply_photo.call_count == 1
+
+
 @pytest.mark.asyncio
 async def test_handle_message_awaiting_password_invalid():
 
@@ -119,13 +127,14 @@ async def test_handle_message_awaiting_password_invalid():
     context.user_data = {"state": UserState.AWAITING_PASSWORD, "ssid": "TestSSID"}
     test_password = "T"
     update.message.text = test_password
-    
+
     await handle_message(update, context)
-    assert(context.user_data["state"]==UserState.AWAITING_PASSWORD)
-        # Assert that the bot sends an error message
+    assert context.user_data["state"] == UserState.AWAITING_PASSWORD
+    # Assert that the bot sends an error message
     update.message.reply_text.assert_called_once_with(
         "❌ Invalid SSID or Password. Please send a valid SSID (1-32 characters) and a Valid Password between 8 and 63 characters."
     )
+
 
 @pytest.mark.asyncio
 async def test_handle_message_awaiting_name():
@@ -221,6 +230,7 @@ async def test_handle_message_awaiting_email():
     assert context.user_data["state"] == UserState.AWAITING_COMPANY
     assert context.user_data["email"] == test_email
 
+
 @pytest.mark.asyncio
 async def test_handle_message_awaiting_email_invalid():
 
@@ -235,13 +245,15 @@ async def test_handle_message_awaiting_email_invalid():
     }
     test_email = "joelperez91.gmail.com"
     update.message.text = test_email
-    
+
     await handle_message(update, context)
-    assert(context.user_data["state"]==UserState.AWAITING_EMAIL)
-        # Assert that the bot sends an error message
+    assert context.user_data["state"] == UserState.AWAITING_EMAIL
+    # Assert that the bot sends an error message
     update.message.reply_text.assert_called_once_with(
         "❌ Invalid email. Please send a valid email address."
     )
+
+
 @pytest.mark.asyncio
 async def test_handle_message_awaiting_company():
     # Mock Update and Context
@@ -343,4 +355,3 @@ async def test_handle_message_awaiting_website():
     )
     # Assert that user data is cleared
     assert context.user_data == {}
-

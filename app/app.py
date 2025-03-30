@@ -126,19 +126,26 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     elif user_state == UserState.AWAITING_TITLE:
         context.user_data["title"] = update.message.text
         context.user_data["state"] = UserState.AWAITING_WEBSITE
-        await update.message.reply_text("Please send the URL 🔗:")
+        await update.message.reply_text("Please send the Website URL 🔗:")
     elif user_state == UserState.AWAITING_WEBSITE:
-        qr_code = await generate_contact_qr(
-            ContactQR(
-                name=context.user_data["name"],
-                surname=context.user_data["surname"],
-                phone_number=context.user_data["phone_number"],
-                email=context.user_data["email"],
-                company=context.user_data["company"],
-                title=context.user_data["title"],
-                url=update.message.text.strip(),
+        try:
+            qr_code = await generate_contact_qr(
+                ContactQR(
+                    name=context.user_data["name"],
+                    surname=context.user_data["surname"],
+                    phone_number=context.user_data["phone_number"],
+                    email=context.user_data["email"],
+                    company=context.user_data["company"],
+                    title=context.user_data["title"],
+                    url=update.message.text.strip(),
+                )
             )
-        )
+        except ValidationError:
+            await update.message.reply_text(
+                "❌ Invalid URL. Please send a valid URL starting with 'http://' or 'https://'."
+            )
+            return None
+
         await update.message.reply_photo(
             photo=qr_code, caption="📇 Scan to read de vcard 📞"
         )
@@ -146,7 +153,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
         await command_options(update, context)
 
     else:  # pragma: no cover
-        logger.error("❌ Invalid state. Please try again.")
+        logger.debug("❌ Invalid state. Please try again.")
         await command_options(update, context)
 
 
@@ -174,7 +181,6 @@ async def command_options(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     query = update.callback_query
     await query.answer()
-
     if query.data == "contact_info":
         await query.message.reply_text("Please send the name:")
         context.user_data["state"] = UserState.AWAITING_NAME
