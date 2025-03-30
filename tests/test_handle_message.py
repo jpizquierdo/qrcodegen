@@ -302,7 +302,7 @@ async def test_handle_message_awaiting_title():
     await handle_message(update, context)
 
     # Assert that the bot asks for the website URL
-    update.message.reply_text.assert_called_once_with("Please send the URL 🔗:")
+    update.message.reply_text.assert_called_once_with("Please send the Website URL 🔗:")
 
     # Assert that the state is updated
     assert context.user_data["state"] == UserState.AWAITING_WEBSITE
