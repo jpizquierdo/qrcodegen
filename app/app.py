@@ -35,126 +35,178 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     await command_options(update, context)
 
 
-# Message handler for QR generation
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_state = context.user_data.get("state")
-    if user_state == UserState.AWAITING_URL:
-        try:
-            qr_code = await generate_url_qr(URLQR(url=update.message.text.strip()))
-            # Send QR code image
-            await update.message.reply_photo(
-                photo=qr_code, caption="Here is your QR code!"
-            )
-            # Clear user data to prevent unwanted behavior
-            context.user_data.clear()
-            await command_options(update, context)
-        except ValidationError:
-            await update.message.reply_text(
-                "❌ Invalid URL. Please send a valid URL starting with 'http://' or 'https://'."
-            )
-        except Exception as e:
-            logger.error(f"Error generating QR code: {e}")
-            await update.message.reply_text(
-                "⚠️ An unexpected error occurred. Please try again."
-            )
-            context.user_data.clear()
-            await command_options(update, context)
-    elif user_state == UserState.AWAITING_SSID:
-        try:
-            wifi = WiFiSSIDModel(ssid=update.message.text)  # Validation using Pydantic
-            context.user_data["ssid"] = wifi.ssid
-            context.user_data["state"] = UserState.AWAITING_PASSWORD
-            await update.message.reply_text("Please send the Wi-Fi password:")
-        except ValidationError:
-            await update.message.reply_text(
-                "❌ Invalid SSID. Please send a valid SSID (1-32 characters)."
-            )
-        except Exception as e:
-            logger.error(f"Error generating QR code: {e}")
-            await update.message.reply_text(
-                "⚠️ An unexpected error occurred. Please try again."
-            )
-            context.user_data.clear()
-            await command_options(update, context)
-    elif user_state == UserState.AWAITING_PASSWORD:
-        try:
-            qr_code = await generate_wifi_qr(
-                WifiQR(ssid=context.user_data["ssid"], password=update.message.text)
-            )
-            await update.message.reply_photo(
-                photo=qr_code, caption="📶 Scan to connect to Wi-Fi"
-            )
-            context.user_data.clear()
-            await command_options(update, context)
-        except ValidationError:
-            await update.message.reply_text(
-                "❌ Invalid SSID or Password. Please send a valid SSID (1-32 characters) and a Valid Password between 8 and 63 characters."
-            )
-    elif user_state == UserState.AWAITING_NAME:
-        context.user_data["name"] = update.message.text
-        context.user_data["state"] = UserState.AWAITING_SURNAME
-        await update.message.reply_text("Please send the surname:")
-    elif user_state == UserState.AWAITING_SURNAME:
-        context.user_data["surname"] = update.message.text
-        context.user_data["state"] = UserState.AWAITING_PHONE
-        await update.message.reply_text("Please send the phone number with prefix:")
-    elif user_state == UserState.AWAITING_PHONE:
-        context.user_data["phone_number"] = update.message.text
-        context.user_data["state"] = UserState.AWAITING_EMAIL
-        await update.message.reply_text("Please send the email:")
-    elif user_state == UserState.AWAITING_EMAIL:
-        try:
-            email = EmailModel(email=update.message.text)  # Validation using Pydantic
-            context.user_data["email"] = email.email
-            context.user_data["state"] = UserState.AWAITING_COMPANY
-            await update.message.reply_text("Please send the company name:")
-        except ValidationError:
-            await update.message.reply_text(
-                "❌ Invalid email. Please send a valid email address."
-            )
-        except Exception as e:
-            logger.error(f"Error generating QR code: {e}")
-            await update.message.reply_text(
-                "⚠️ An unexpected error occurred. Please try again."
-            )
-            context.user_data.clear()
-            await command_options(update, context)
-    elif user_state == UserState.AWAITING_COMPANY:
-        context.user_data["company"] = update.message.text
-        context.user_data["state"] = UserState.AWAITING_TITLE
-        await update.message.reply_text("Please send the job title:")
-    elif user_state == UserState.AWAITING_TITLE:
-        context.user_data["title"] = update.message.text
-        context.user_data["state"] = UserState.AWAITING_WEBSITE
-        await update.message.reply_text("Please send the Website URL 🔗:")
-    elif user_state == UserState.AWAITING_WEBSITE:
-        try:
-            qr_code = await generate_contact_qr(
-                ContactQR(
-                    name=context.user_data["name"],
-                    surname=context.user_data["surname"],
-                    phone_number=context.user_data["phone_number"],
-                    email=context.user_data["email"],
-                    company=context.user_data["company"],
-                    title=context.user_data["title"],
-                    url=update.message.text.strip(),
-                )
-            )
-        except ValidationError:
-            await update.message.reply_text(
-                "❌ Invalid URL. Please send a valid URL starting with 'http://' or 'https://'."
-            )
-            return None
 
-        await update.message.reply_photo(
-            photo=qr_code, caption="📇 Scan to read de vcard 📞"
+    # Mapping states to their respective handlers
+    state_handlers = {
+        UserState.AWAITING_URL: handle_url_state,
+        UserState.AWAITING_SSID: handle_ssid_state,
+        UserState.AWAITING_PASSWORD: handle_password_state,
+        UserState.AWAITING_NAME: handle_name_state,
+        UserState.AWAITING_SURNAME: handle_surname_state,
+        UserState.AWAITING_PHONE: handle_phone_state,
+        UserState.AWAITING_EMAIL: handle_email_state,
+        UserState.AWAITING_COMPANY: handle_company_state,
+        UserState.AWAITING_TITLE: handle_title_state,
+        UserState.AWAITING_WEBSITE: handle_website_state,
+    }
+
+    # Call the appropriate handler or fallback
+    handler = state_handlers.get(user_state, handle_invalid_state)
+    await handler(update, context)
+
+
+async def handle_url_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    try:
+        qr_code = await generate_url_qr(URLQR(url=update.message.text.strip()))
+        # Send QR code image
+        await update.message.reply_photo(photo=qr_code, caption="Here is your QR code!")
+        # Clear user data to prevent unwanted behavior
+        context.user_data.clear()
+        await command_options(update, context)
+    except ValidationError:
+        await update.message.reply_text(
+            "❌ Invalid URL. Please send a valid URL starting with 'http://' or 'https://'."
+        )
+    except Exception as e:
+        logger.error(f"Error generating QR code: {e}")
+        await update.message.reply_text(
+            "⚠️ An unexpected error occurred. Please try again."
         )
         context.user_data.clear()
         await command_options(update, context)
 
-    else:  # pragma: no cover
-        logger.debug("❌ Invalid state. Please try again.")
+
+async def handle_ssid_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    try:
+        wifi = WiFiSSIDModel(ssid=update.message.text)  # Validation using Pydantic
+        context.user_data["ssid"] = wifi.ssid
+        context.user_data["state"] = UserState.AWAITING_PASSWORD
+        await update.message.reply_text("Please send the Wi-Fi password:")
+    except ValidationError:
+        await update.message.reply_text(
+            "❌ Invalid SSID. Please send a valid SSID (1-32 characters)."
+        )
+    except Exception as e:
+        logger.error(f"Error generating QR code: {e}")
+        await update.message.reply_text(
+            "⚠️ An unexpected error occurred. Please try again."
+        )
+        context.user_data.clear()
         await command_options(update, context)
+
+
+async def handle_password_state(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    try:
+        qr_code = await generate_wifi_qr(
+            WifiQR(ssid=context.user_data["ssid"], password=update.message.text)
+        )
+        await update.message.reply_photo(
+            photo=qr_code, caption="📶 Scan to connect to Wi-Fi"
+        )
+        context.user_data.clear()
+        await command_options(update, context)
+    except ValidationError:
+        await update.message.reply_text(
+            "❌ Invalid SSID or Password. Please send a valid SSID (1-32 characters) and a Valid Password between 8 and 63 characters."
+        )
+
+
+async def handle_name_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    context.user_data["name"] = update.message.text
+    context.user_data["state"] = UserState.AWAITING_SURNAME
+    await update.message.reply_text("Please send the surname:")
+
+
+async def handle_surname_state(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    context.user_data["surname"] = update.message.text
+    context.user_data["state"] = UserState.AWAITING_PHONE
+    await update.message.reply_text("Please send the phone number with prefix:")
+
+
+async def handle_phone_state(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    context.user_data["phone_number"] = update.message.text
+    context.user_data["state"] = UserState.AWAITING_EMAIL
+    await update.message.reply_text("Please send the email:")
+
+
+async def handle_email_state(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    try:
+        email = EmailModel(email=update.message.text)  # Validation using Pydantic
+        context.user_data["email"] = email.email
+        context.user_data["state"] = UserState.AWAITING_COMPANY
+        await update.message.reply_text("Please send the company name:")
+    except ValidationError:
+        await update.message.reply_text(
+            "❌ Invalid email. Please send a valid email address."
+        )
+    except Exception as e:
+        logger.error(f"Error generating QR code: {e}")
+        await update.message.reply_text(
+            "⚠️ An unexpected error occurred. Please try again."
+        )
+        context.user_data.clear()
+        await command_options(update, context)
+
+
+async def handle_company_state(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    context.user_data["company"] = update.message.text
+    context.user_data["state"] = UserState.AWAITING_TITLE
+    await update.message.reply_text("Please send the job title:")
+
+
+async def handle_title_state(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    context.user_data["title"] = update.message.text
+    context.user_data["state"] = UserState.AWAITING_WEBSITE
+    await update.message.reply_text("Please send the Website URL 🔗:")
+
+
+async def handle_website_state(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    try:
+        qr_code = await generate_contact_qr(
+            ContactQR(
+                name=context.user_data["name"],
+                surname=context.user_data["surname"],
+                phone_number=context.user_data["phone_number"],
+                email=context.user_data["email"],
+                company=context.user_data["company"],
+                title=context.user_data["title"],
+                url=update.message.text.strip(),
+            )
+        )
+    except ValidationError:
+        await update.message.reply_text(
+            "❌ Invalid URL. Please send a valid URL starting with 'http://' or 'https://'."
+        )
+        return None
+
+    await update.message.reply_photo(
+        photo=qr_code, caption="📇 Scan to read de vcard 📞"
+    )
+    context.user_data.clear()
+    await command_options(update, context)
+
+
+async def handle_invalid_state(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
+    logger.debug("❌ Invalid state. Please try again.")
+    await command_options(update, context)
 
 
 # Addtional Menu

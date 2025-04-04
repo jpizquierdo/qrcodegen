@@ -1,9 +1,32 @@
 import pytest
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, ANY
 from app.app import handle_message
 from app.core.models import UserState, URLQR, WifiQR, ContactQR
 from app.qrcodegen import generate_wifi_qr, generate_contact_qr, generate_url_qr
+
+
+@pytest.mark.asyncio
+async def test_handle_message_invalid():
+    # Mock Update and Context
+    update = AsyncMock()
+    context = AsyncMock()
+    context.user_data = {}
+    test_message = "random"
+    update.message.text = test_message
+    context.bot.send_message = AsyncMock()  # Mock async method
+
+    await handle_message(update, context)
+    # Assert that the bot sends the correct messages
+    assert context.bot.send_message.call_count == 1
+
+    # Assert that the bot sends the message to choose an option below
+    context.bot.send_message.assert_any_call(
+        chat_id=update.effective_chat.id,
+        text="Choose an option below:",
+        reply_markup=ANY,
+    )
+    assert context.user_data == {}
 
 
 @pytest.mark.asyncio
