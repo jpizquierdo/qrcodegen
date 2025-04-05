@@ -1,9 +1,32 @@
 import pytest
 
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, patch, ANY
 from app.app import handle_message
 from app.core.models import UserState, URLQR, WifiQR, ContactQR
 from app.qrcodegen import generate_wifi_qr, generate_contact_qr, generate_url_qr
+
+
+@pytest.mark.asyncio
+async def test_handle_message_invalid():
+    # Mock Update and Context
+    update = AsyncMock()
+    context = AsyncMock()
+    context.user_data = {}
+    test_message = "random"
+    update.message.text = test_message
+    context.bot.send_message = AsyncMock()  # Mock async method
+
+    await handle_message(update, context)
+    # Assert that the bot sends the correct messages
+    assert context.bot.send_message.call_count == 1
+
+    # Assert that the bot sends the message to choose an option below
+    context.bot.send_message.assert_any_call(
+        chat_id=update.effective_chat.id,
+        text="Choose an option below:",
+        reply_markup=ANY,
+    )
+    assert context.user_data == {}
 
 
 @pytest.mark.asyncio
@@ -11,7 +34,7 @@ async def test_handle_message_awaiting_url():
     # Mock Update and Context
     update = AsyncMock()
     context = AsyncMock()
-    context.user_data = {"state": UserState.AWAITING_URL}
+    context.user_data = {"state": UserState.URL_AWAITING_URL}
     test_url = "https://example.com"
     update.message.text = test_url
     update.message.reply_photo = AsyncMock()  # Mock the async method
@@ -39,12 +62,12 @@ async def test_handle_message_awaiting_url_invalid():
     # Mock Update and Context
     update = AsyncMock()
     context = AsyncMock()
-    context.user_data = {"state": UserState.AWAITING_URL}
+    context.user_data = {"state": UserState.URL_AWAITING_URL}
     test_url = "invalid-url.com"
     update.message.text = test_url
 
     await handle_message(update, context)
-    assert context.user_data["state"] == UserState.AWAITING_URL
+    assert context.user_data["state"] == UserState.URL_AWAITING_URL
     # Assert that the bot sends an error message
     update.message.reply_text.assert_called_once_with(
         "❌ Invalid URL. Please send a valid URL starting with 'http://' or 'https://'."
@@ -56,7 +79,7 @@ async def test_handle_message_awaiting_ssid():
     # Mock Update and Context
     update = AsyncMock()
     context = AsyncMock()
-    context.user_data = {"state": UserState.AWAITING_SSID}
+    context.user_data = {"state": UserState.WIFI_AWAITING_SSID}
     test_ssid = "TestSSID"
     update.message.text = test_ssid
     update.message.reply_text = AsyncMock()  # Mock the async method
@@ -68,7 +91,7 @@ async def test_handle_message_awaiting_ssid():
     update.message.reply_text.assert_called_once_with("Please send the Wi-Fi password:")
 
     # Assert that the state is updated
-    assert context.user_data["state"] == UserState.AWAITING_PASSWORD
+    assert context.user_data["state"] == UserState.WIFI_AWAITING_PASSWORD
 
 
 @pytest.mark.asyncio
@@ -77,12 +100,12 @@ async def test_handle_message_awaiting_ssid_invalid():
     # Mock Update and Context
     update = AsyncMock()
     context = AsyncMock()
-    context.user_data = {"state": UserState.AWAITING_SSID}
+    context.user_data = {"state": UserState.WIFI_AWAITING_SSID}
     test_ssid = "TestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSIDTestSSID"
     update.message.text = test_ssid
 
     await handle_message(update, context)
-    assert context.user_data["state"] == UserState.AWAITING_SSID
+    assert context.user_data["state"] == UserState.WIFI_AWAITING_SSID
     # Assert that the bot sends an error message
     update.message.reply_text.assert_called_once_with(
         "❌ Invalid SSID. Please send a valid SSID (1-32 characters)."
@@ -94,7 +117,7 @@ async def test_handle_message_awaiting_password():
     # Mock Update and Context
     update = AsyncMock()
     context = AsyncMock()
-    context.user_data = {"state": UserState.AWAITING_PASSWORD, "ssid": "TestSSID"}
+    context.user_data = {"state": UserState.WIFI_AWAITING_PASSWORD, "ssid": "TestSSID"}
     test_password = "TestPassword"
     update.message.text = test_password
     update.message.reply_photo = AsyncMock()  # Mock the async method
@@ -124,12 +147,12 @@ async def test_handle_message_awaiting_password_invalid():
     # Mock Update and Context
     update = AsyncMock()
     context = AsyncMock()
-    context.user_data = {"state": UserState.AWAITING_PASSWORD, "ssid": "TestSSID"}
+    context.user_data = {"state": UserState.WIFI_AWAITING_PASSWORD, "ssid": "TestSSID"}
     test_password = "T"
     update.message.text = test_password
 
     await handle_message(update, context)
-    assert context.user_data["state"] == UserState.AWAITING_PASSWORD
+    assert context.user_data["state"] == UserState.WIFI_AWAITING_PASSWORD
     # Assert that the bot sends an error message
     update.message.reply_text.assert_called_once_with(
         "❌ Invalid SSID or Password. Please send a valid SSID (1-32 characters) and a Valid Password between 8 and 63 characters."
@@ -141,7 +164,7 @@ async def test_handle_message_awaiting_name():
     # Mock Update and Context
     update = AsyncMock()
     context = AsyncMock()
-    context.user_data = {"state": UserState.AWAITING_NAME}
+    context.user_data = {"state": UserState.VCARD_AWAITING_NAME}
     test_name = "Joel"
     update.message.text = test_name
     update.message.reply_text = AsyncMock()  # Mock the async method
@@ -153,7 +176,7 @@ async def test_handle_message_awaiting_name():
     update.message.reply_text.assert_called_once_with("Please send the surname:")
 
     # Assert that the state is updated
-    assert context.user_data["state"] == UserState.AWAITING_SURNAME
+    assert context.user_data["state"] == UserState.VCARD_AWAITING_SURNAME
     assert context.user_data["name"] == test_name
 
 
@@ -162,7 +185,7 @@ async def test_handle_message_awaiting_surname():
     # Mock Update and Context
     update = AsyncMock()
     context = AsyncMock()
-    context.user_data = {"state": UserState.AWAITING_SURNAME, "name": "Joel"}
+    context.user_data = {"state": UserState.VCARD_AWAITING_SURNAME, "name": "Joel"}
     test_surname = "Perez"
     update.message.text = test_surname
     update.message.reply_text = AsyncMock()  # Mock the async method
@@ -176,7 +199,7 @@ async def test_handle_message_awaiting_surname():
     )
 
     # Assert that the state is updated
-    assert context.user_data["state"] == UserState.AWAITING_PHONE
+    assert context.user_data["state"] == UserState.VCARD_AWAITING_PHONE
     assert context.user_data["surname"] == test_surname
 
 
@@ -186,7 +209,7 @@ async def test_handle_message_awaiting_phone():
     update = AsyncMock()
     context = AsyncMock()
     context.user_data = {
-        "state": UserState.AWAITING_PHONE,
+        "state": UserState.VCARD_AWAITING_PHONE,
         "name": "Joel",
         "surname": "Perez",
     }
@@ -201,7 +224,7 @@ async def test_handle_message_awaiting_phone():
     update.message.reply_text.assert_called_once_with("Please send the email:")
 
     # Assert that the state is updated
-    assert context.user_data["state"] == UserState.AWAITING_EMAIL
+    assert context.user_data["state"] == UserState.VCARD_AWAITING_EMAIL
     assert context.user_data["phone_number"] == test_phone
 
 
@@ -211,7 +234,7 @@ async def test_handle_message_awaiting_email():
     update = AsyncMock()
     context = AsyncMock()
     context.user_data = {
-        "state": UserState.AWAITING_EMAIL,
+        "state": UserState.VCARD_AWAITING_EMAIL,
         "name": "Joel",
         "surname": "Perez",
         "phone_number": "+123456789",
@@ -227,7 +250,7 @@ async def test_handle_message_awaiting_email():
     update.message.reply_text.assert_called_once_with("Please send the company name:")
 
     # Assert that the state is updated
-    assert context.user_data["state"] == UserState.AWAITING_COMPANY
+    assert context.user_data["state"] == UserState.VCARD_AWAITING_COMPANY
     assert context.user_data["email"] == test_email
 
 
@@ -238,7 +261,7 @@ async def test_handle_message_awaiting_email_invalid():
     update = AsyncMock()
     context = AsyncMock()
     context.user_data = {
-        "state": UserState.AWAITING_EMAIL,
+        "state": UserState.VCARD_AWAITING_EMAIL,
         "name": "Joel",
         "surname": "Perez",
         "phone_number": "+123456789",
@@ -247,7 +270,7 @@ async def test_handle_message_awaiting_email_invalid():
     update.message.text = test_email
 
     await handle_message(update, context)
-    assert context.user_data["state"] == UserState.AWAITING_EMAIL
+    assert context.user_data["state"] == UserState.VCARD_AWAITING_EMAIL
     # Assert that the bot sends an error message
     update.message.reply_text.assert_called_once_with(
         "❌ Invalid email. Please send a valid email address."
@@ -260,7 +283,7 @@ async def test_handle_message_awaiting_company():
     update = AsyncMock()
     context = AsyncMock()
     context.user_data = {
-        "state": UserState.AWAITING_COMPANY,
+        "state": UserState.VCARD_AWAITING_COMPANY,
         "name": "Joel",
         "surname": "Perez",
         "phone_number": "+123456789",
@@ -277,7 +300,7 @@ async def test_handle_message_awaiting_company():
     update.message.reply_text.assert_called_once_with("Please send the job title:")
 
     # Assert that the state is updated
-    assert context.user_data["state"] == UserState.AWAITING_TITLE
+    assert context.user_data["state"] == UserState.VCARD_AWAITING_TITLE
     assert context.user_data["company"] == test_company
 
 
@@ -287,7 +310,7 @@ async def test_handle_message_awaiting_title():
     update = AsyncMock()
     context = AsyncMock()
     context.user_data = {
-        "state": UserState.AWAITING_TITLE,
+        "state": UserState.VCARD_AWAITING_TITLE,
         "name": "Joel",
         "surname": "Perez",
         "phone_number": "+123456789",
@@ -305,7 +328,7 @@ async def test_handle_message_awaiting_title():
     update.message.reply_text.assert_called_once_with("Please send the Website URL 🔗:")
 
     # Assert that the state is updated
-    assert context.user_data["state"] == UserState.AWAITING_WEBSITE
+    assert context.user_data["state"] == UserState.VCARD_AWAITING_WEBSITE
     assert context.user_data["title"] == test_title
 
 
@@ -315,7 +338,7 @@ async def test_handle_message_awaiting_website():
     update = AsyncMock()
     context = AsyncMock()
     context.user_data = {
-        "state": UserState.AWAITING_WEBSITE,
+        "state": UserState.VCARD_AWAITING_WEBSITE,
         "name": "Joel",
         "surname": "Perez",
         "phone_number": "+123456789",
@@ -355,3 +378,28 @@ async def test_handle_message_awaiting_website():
     )
     # Assert that user data is cleared
     assert context.user_data == {}
+
+
+@pytest.mark.asyncio
+async def test_handle_message_awaiting_website_invalid():
+    # Mock Update and Context
+    update = AsyncMock()
+    context = AsyncMock()
+    context.user_data = {
+        "state": UserState.VCARD_AWAITING_WEBSITE,
+        "name": "Joel",
+        "surname": "Perez",
+        "phone_number": "+123456789",
+        "email": "joelperez91@gmail.com",
+        "company": "Example Inc.",
+        "title": "Developer",
+    }
+    test_url = "bad@url.com"
+    update.message.text = test_url
+
+    await handle_message(update, context)
+    assert context.user_data["state"] == UserState.VCARD_AWAITING_WEBSITE
+    # Assert that the bot sends an error message
+    update.message.reply_text.assert_called_once_with(
+        "❌ Invalid URL. Please send a valid URL starting with 'http://' or 'https://'."
+    )

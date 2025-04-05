@@ -21,7 +21,7 @@ async def test_button_callback_contact_info():
 
     # Assert that the bot sends the correct message
     query.message.reply_text.assert_called_once_with("Please send the name:")
-    assert context.user_data["state"] == UserState.AWAITING_NAME
+    assert context.user_data["state"] == UserState.VCARD_AWAITING_NAME
 
 
 @pytest.mark.asyncio
@@ -40,7 +40,7 @@ async def test_button_callback_wifi_qr():
 
     # Assert that the bot sends the correct message
     query.message.reply_text.assert_called_once_with("Please send the Wi-Fi SSID:")
-    assert context.user_data["state"] == UserState.AWAITING_SSID
+    assert context.user_data["state"] == UserState.WIFI_AWAITING_SSID
 
 
 @pytest.mark.asyncio
@@ -59,7 +59,7 @@ async def test_button_callback_url_qr():
 
     # Assert that the bot sends the correct message
     query.message.reply_text.assert_called_once_with("Please send the URL:")
-    assert context.user_data["state"] == UserState.AWAITING_URL
+    assert context.user_data["state"] == UserState.URL_AWAITING_URL
 
 
 @pytest.mark.asyncio
