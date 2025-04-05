@@ -5,11 +5,11 @@ from app.core.models import WifiQR,WiFiSSIDModel,UserState
 from app.functions.shared import command_options
 from app.qrcodegen import generate_wifi_qr
 
-async def handle_ssid_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def wifi_qr_handle_ssid_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     try:
         wifi = WiFiSSIDModel(ssid=update.message.text)  # Validation using Pydantic
         context.user_data["ssid"] = wifi.ssid
-        context.user_data["state"] = UserState.AWAITING_PASSWORD
+        context.user_data["state"] = UserState.WIFI_AWAITING_PASSWORD
         await update.message.reply_text("Please send the Wi-Fi password:")
     except ValidationError:
         await update.message.reply_text(
@@ -17,7 +17,7 @@ async def handle_ssid_state(update: Update, context: ContextTypes.DEFAULT_TYPE) 
         )
 
 
-async def handle_password_state(
+async def wifi_qr_handle_password_state(
     update: Update, context: ContextTypes.DEFAULT_TYPE
 ) -> None:
     try:

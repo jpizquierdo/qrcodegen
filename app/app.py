@@ -18,16 +18,16 @@ from app.core.models import (
     UserState,
 )
 
-from app.functions.url_qr import handle_url_state
-from app.functions.wifi_qr import handle_ssid_state, handle_password_state
+from app.functions.url_qr import url_qr_handle_url_state
+from app.functions.wifi_qr import wifi_qr_handle_ssid_state, wifi_qr_handle_password_state
 from app.functions.vcard_qr import (
-    handle_name_state,
-    handle_surname_state,
-    handle_phone_state,
-    handle_email_state,
-    handle_company_state,
-    handle_title_state,
-    handle_website_state,
+    vcard_qr_handle_name_state,
+    vcard_qr_handle_surname_state,
+    vcard_qr_handle_phone_state,
+    vcard_qr_handle_email_state,
+    vcard_qr_handle_company_state,
+    vcard_qr_handle_title_state,
+    vcard_qr_handle_website_state,
 )
 from app.functions.shared import command_options, handle_invalid_state
 
@@ -46,16 +46,16 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # Mapping states to their respective handlers
     state_handlers = {
-        UserState.AWAITING_URL: handle_url_state,
-        UserState.AWAITING_SSID: handle_ssid_state,
-        UserState.AWAITING_PASSWORD: handle_password_state,
-        UserState.AWAITING_NAME: handle_name_state,
-        UserState.AWAITING_SURNAME: handle_surname_state,
-        UserState.AWAITING_PHONE: handle_phone_state,
-        UserState.AWAITING_EMAIL: handle_email_state,
-        UserState.AWAITING_COMPANY: handle_company_state,
-        UserState.AWAITING_TITLE: handle_title_state,
-        UserState.AWAITING_WEBSITE: handle_website_state,
+        UserState.URL_AWAITING_URL: url_qr_handle_url_state,
+        UserState.WIFI_AWAITING_SSID: wifi_qr_handle_ssid_state,
+        UserState.WIFI_AWAITING_PASSWORD: wifi_qr_handle_password_state,
+        UserState.VCARD_AWAITING_NAME: vcard_qr_handle_name_state,
+        UserState.VCARD_AWAITING_SURNAME: vcard_qr_handle_surname_state,
+        UserState.VCARD_AWAITING_PHONE: vcard_qr_handle_phone_state,
+        UserState.VCARD_AWAITING_EMAIL: vcard_qr_handle_email_state,
+        UserState.VCARD_AWAITING_COMPANY: vcard_qr_handle_company_state,
+        UserState.VCARD_AWAITING_TITLE: vcard_qr_handle_title_state,
+        UserState.VCARD_AWAITING_WEBSITE: vcard_qr_handle_website_state,
     }
 
     # Call the appropriate handler or fallback
@@ -69,20 +69,19 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     await query.answer()
     if query.data == "contact_info":
         await query.message.reply_text("Please send the name:")
-        context.user_data["state"] = UserState.AWAITING_NAME
+        context.user_data["state"] = UserState.VCARD_AWAITING_NAME
     elif query.data == "wifi_qr":
         await query.message.reply_text("Please send the Wi-Fi SSID:")
-        context.user_data["state"] = UserState.AWAITING_SSID
+        context.user_data["state"] = UserState.WIFI_AWAITING_SSID
     elif query.data == "url_qr":
         await query.message.reply_text("Please send the URL:")
-        context.user_data["state"] = UserState.AWAITING_URL
+        context.user_data["state"] = UserState.URL_AWAITING_URL
     elif query.data == "about":
         await query.message.reply_text(
             "ℹ️ This bot provides useful tools for QR codes creation:\nSuch as contact info, url, wifi, and more.\n"
             "Created with ❤️ using Python.\n\n"
             "Source code is available on GitHub: https://github.com/jpizquierdo/qrcodegen"
         )
-
     elif query.data == "back":
         await start(update, context)
 
@@ -92,13 +91,13 @@ if __name__ == "__main__":  # pragma: no cover
 
     start_handler = CommandHandler(command="start", callback=start)
     command_options_handler = CommandHandler(command="more", callback=command_options)
-    url_handler = MessageHandler(
+    msg_handler = MessageHandler(
         filters=filters.TEXT & ~filters.COMMAND, callback=handle_message
     )
     button_query_handler = CallbackQueryHandler(button_callback)
 
     application.add_handler(start_handler)
-    application.add_handler(url_handler)
+    application.add_handler(msg_handler)
     application.add_handler(command_options_handler)
     application.add_handler(button_query_handler)
 
