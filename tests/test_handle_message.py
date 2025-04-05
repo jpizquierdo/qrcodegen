@@ -378,3 +378,28 @@ async def test_handle_message_awaiting_website():
     )
     # Assert that user data is cleared
     assert context.user_data == {}
+
+
+@pytest.mark.asyncio
+async def test_handle_message_awaiting_website_invalid():
+    # Mock Update and Context
+    update = AsyncMock()
+    context = AsyncMock()
+    context.user_data = {
+        "state": UserState.AWAITING_WEBSITE,
+        "name": "Joel",
+        "surname": "Perez",
+        "phone_number": "+123456789",
+        "email": "joelperez91@gmail.com",
+        "company": "Example Inc.",
+        "title": "Developer",
+    }
+    test_url = "bad@url.com"
+    update.message.text = test_url
+
+    await handle_message(update, context)
+    assert context.user_data["state"] == UserState.AWAITING_WEBSITE
+    # Assert that the bot sends an error message
+    update.message.reply_text.assert_called_once_with(
+        "❌ Invalid URL. Please send a valid URL starting with 'http://' or 'https://'."
+    )
