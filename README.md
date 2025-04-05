@@ -19,7 +19,8 @@ Bot deployment is currently on [Northflank](https://northflank.com), you can pay
 - Docker Compose
 
 ### Installation
-#### 📦 Pull the Image from Docker Hub
+#### 📦 Pull the Image from [Docker Hub](https://hub.docker.com/r/jpizquierdo/qrcodegen)
+
 1. Pull the image from Docker Hub:
 To get the latest version of `qrcodegen`, pull it from Docker Hub:  
     ```sh
