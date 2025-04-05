@@ -3,7 +3,12 @@ import pytest
 from unittest.mock import AsyncMock, patch, ANY
 from app.app import handle_message
 from app.core.models import UserState, URLQR, WifiQR, ContactQR
-from app.qrcodegen import generate_wifi_qr, generate_contact_qr, generate_url_qr
+from app.qrcodegen import (
+    generate_wifi_qr,
+    generate_contact_qr,
+    generate_url_qr,
+    generate_text_qr,
+)
 
 
 @pytest.mark.asyncio
@@ -27,6 +32,33 @@ async def test_handle_message_invalid():
         reply_markup=ANY,
     )
     assert context.user_data == {}
+
+
+@pytest.mark.asyncio
+async def test_handle_message_awaiting_text():
+    # Mock Update and Context
+    update = AsyncMock()
+    context = AsyncMock()
+    context.user_data = {"state": UserState.TEXT_AWAITING_TEXT}
+    test_url = "blablabla blebleble little things"
+    update.message.text = test_url
+    update.message.reply_photo = AsyncMock()  # Mock the async method
+
+    # Mock realistic PNG-like data for the QR code
+    mock_qr = await generate_text_qr(text=test_url)
+    with patch("app.qrcodegen.generate_text_qr", new=AsyncMock(return_value=mock_qr)):
+        # Call the handle_message function
+        await handle_message(update, context)
+
+    # Assert by content
+    assert update.message.reply_photo.call_count == 1
+    actual_call = update.message.reply_photo.call_args[1]["photo"]
+    assert actual_call.getvalue() == mock_qr.getvalue()
+
+    # Optionally check the caption as well
+    update.message.reply_photo.assert_called_once_with(
+        photo=actual_call, caption="Here is your QR code!"
+    )
 
 
 @pytest.mark.asyncio

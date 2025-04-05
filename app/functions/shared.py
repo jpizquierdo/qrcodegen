@@ -7,6 +7,7 @@ from app.core.config import logger
 
 async def command_options(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     keyboard = [
+        [InlineKeyboardButton("📝 Text QR Code", callback_data="text_qr")],
         [InlineKeyboardButton("🔗 URL QR Code", callback_data="url_qr")],
         [InlineKeyboardButton("📞 Contact Info", callback_data="contact_info")],
         [InlineKeyboardButton("📶 Wi-Fi QR Code", callback_data="wifi_qr")],
