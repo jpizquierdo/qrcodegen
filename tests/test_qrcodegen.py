@@ -1,8 +1,20 @@
 import pytest
-from app.qrcodegen import generate_url_qr, generate_wifi_qr, generate_contact_qr
+from app.qrcodegen import (
+    generate_url_qr,
+    generate_wifi_qr,
+    generate_contact_qr,
+    generate_text_qr,
+)
 from app.core.models import ContactQR, WifiQR, URLQR
 from pydantic import ValidationError
 from io import BytesIO
+
+
+@pytest.mark.asyncio
+async def test_generate_text_qr():
+    qr_code = await generate_text_qr(text="blabla bleble cositas")
+    assert isinstance(qr_code, BytesIO)
+    assert qr_code.getvalue().startswith(b"\x89PNG")  # Check if it's a PNG file
 
 
 @pytest.mark.asyncio

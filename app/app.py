@@ -17,9 +17,12 @@ from app.core.config import settings, logger
 from app.core.models import (
     UserState,
 )
-
+from app.functions.text_qr import text_qr_handle_text_state
 from app.functions.url_qr import url_qr_handle_url_state
-from app.functions.wifi_qr import wifi_qr_handle_ssid_state, wifi_qr_handle_password_state
+from app.functions.wifi_qr import (
+    wifi_qr_handle_ssid_state,
+    wifi_qr_handle_password_state,
+)
 from app.functions.vcard_qr import (
     vcard_qr_handle_name_state,
     vcard_qr_handle_surname_state,
@@ -46,6 +49,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # Mapping states to their respective handlers
     state_handlers = {
+        UserState.TEXT_AWAITING_TEXT: text_qr_handle_text_state,
         UserState.URL_AWAITING_URL: url_qr_handle_url_state,
         UserState.WIFI_AWAITING_SSID: wifi_qr_handle_ssid_state,
         UserState.WIFI_AWAITING_PASSWORD: wifi_qr_handle_password_state,
@@ -84,6 +88,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         )
     elif query.data == "back":
         await start(update, context)
+    elif query.data == "text_qr":
+        await query.message.reply_text("Please send the text:")
+        context.user_data["state"] = UserState.TEXT_AWAITING_TEXT
 
 
 if __name__ == "__main__":  # pragma: no cover
