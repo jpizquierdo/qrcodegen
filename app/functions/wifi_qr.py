@@ -1,11 +1,14 @@
 from telegram import Update
 from telegram.ext import ContextTypes
 from pydantic import ValidationError
-from app.core.models import WifiQR,WiFiSSIDModel,UserState
+from app.core.models import WifiQR, WiFiSSIDModel, UserState
 from app.functions.shared import command_options
 from app.qrcodegen import generate_wifi_qr
 
-async def wifi_qr_handle_ssid_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
+async def wifi_qr_handle_ssid_state(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     try:
         wifi = WiFiSSIDModel(ssid=update.message.text)  # Validation using Pydantic
         context.user_data["ssid"] = wifi.ssid

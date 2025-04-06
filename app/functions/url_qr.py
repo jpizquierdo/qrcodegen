@@ -5,7 +5,10 @@ from app.core.models import URLQR
 from app.functions.shared import command_options
 from app.qrcodegen import generate_url_qr
 
-async def url_qr_handle_url_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+
+async def url_qr_handle_url_state(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     try:
         qr_code = await generate_url_qr(URLQR(url=update.message.text.strip()))
         # Send QR code image
