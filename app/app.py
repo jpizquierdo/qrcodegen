@@ -13,7 +13,7 @@ from telegram.ext import (
     ContextTypes,
     CallbackQueryHandler,
 )
-from app.core.config import settings, logger
+from app.core.config import settings, logger, logfire
 from app.core.models import (
     UserState,
 )
@@ -64,7 +64,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
 
     # Call the appropriate handler or fallback
     handler = state_handlers.get(user_state, handle_invalid_state)
-    await handler(update, context)
+    with logfire.span(str(handler.__name__)):
+        await handler(update, context)
 
 
 # Handle Button Callbacks

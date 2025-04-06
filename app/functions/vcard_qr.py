@@ -11,7 +11,9 @@ from app.core.models import (
 )
 
 
-async def vcard_qr_handle_name_state(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def vcard_qr_handle_name_state(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     context.user_data["name"] = update.message.text
     context.user_data["state"] = UserState.VCARD_AWAITING_SURNAME
     await update.message.reply_text("Please send the surname:")
