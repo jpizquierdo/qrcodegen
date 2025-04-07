@@ -63,6 +63,25 @@ async def test_button_callback_url_qr():
 
 
 @pytest.mark.asyncio
+async def test_button_callback_svg_url_qr():
+    # Mock Update and Context
+    update = AsyncMock()
+    context = AsyncMock()
+    context.user_data = {}  # Use a real dictionary for user_data
+    query = AsyncMock()
+    query.data = "svg_url_qr"
+    update.callback_query = query
+    query.message.reply_text = AsyncMock()  # Mock the async method
+
+    # Call the button_callback function
+    await button_callback(update, context)
+
+    # Assert that the bot sends the correct message
+    query.message.reply_text.assert_called_once_with("Please send the URL:")
+    assert context.user_data["state"] == UserState.SVG_URL_AWAITING_URL
+
+
+@pytest.mark.asyncio
 async def test_button_callback_text_qr():
     # Mock Update and Context
     update = AsyncMock()

@@ -1,6 +1,6 @@
 from io import BytesIO
 import qrcode
-
+import qrcode.image.svg
 from app.core.models import ContactQR, WifiQR, URLQR
 
 
@@ -23,7 +23,7 @@ async def generate_text_qr(text: str) -> BytesIO:
     return buffer
 
 
-async def generate_url_qr(url: URLQR) -> BytesIO:
+async def generate_url_qr(url: URLQR, svg: bool = False) -> BytesIO:
     # Create a QR code instance
     qr = qrcode.QRCode(
         version=1,  # controls the size of the QR Code
@@ -34,9 +34,14 @@ async def generate_url_qr(url: URLQR) -> BytesIO:
     # Add the URL data
     qr.add_data(url.url)
     qr.make(fit=True)
-    qr = qr.make_image(fill="black", back_color="white")
     buffer = BytesIO()
-    qr.save(buffer, format="PNG")
+    if svg:
+        qr = qr.make_image(image_factory=qrcode.image.svg.SvgImage)
+        qr.save(buffer)
+        buffer.name = "url_qr.svg"
+    else:
+        qr = qr.make_image(fill="black", back_color="white")
+        qr.save(buffer, format="PNG")
     buffer.seek(0)
 
     return buffer

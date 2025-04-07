@@ -18,7 +18,7 @@ from app.core.models import (
     UserState,
 )
 from app.functions.text_qr import text_qr_handle_text_state
-from app.functions.url_qr import url_qr_handle_url_state
+from app.functions.url_qr import url_qr_handle_url_state, svg_url_qr_handle_url_state
 from app.functions.wifi_qr import (
     wifi_qr_handle_ssid_state,
     wifi_qr_handle_password_state,
@@ -51,6 +51,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     state_handlers = {
         UserState.TEXT_AWAITING_TEXT: text_qr_handle_text_state,
         UserState.URL_AWAITING_URL: url_qr_handle_url_state,
+        UserState.SVG_URL_AWAITING_URL: svg_url_qr_handle_url_state,
         UserState.WIFI_AWAITING_SSID: wifi_qr_handle_ssid_state,
         UserState.WIFI_AWAITING_PASSWORD: wifi_qr_handle_password_state,
         UserState.VCARD_AWAITING_NAME: vcard_qr_handle_name_state,
@@ -81,6 +82,9 @@ async def button_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
     elif query.data == "url_qr":
         await query.message.reply_text("Please send the URL:")
         context.user_data["state"] = UserState.URL_AWAITING_URL
+    elif query.data == "svg_url_qr":
+        await query.message.reply_text("Please send the URL:")
+        context.user_data["state"] = UserState.SVG_URL_AWAITING_URL
     elif query.data == "about":
         await query.message.reply_text(
             "ℹ️ This bot provides useful tools for QR codes creation:\nSuch as contact info, url, wifi, and more.\n"

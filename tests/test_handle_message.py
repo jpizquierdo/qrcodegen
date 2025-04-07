@@ -107,6 +107,51 @@ async def test_handle_message_awaiting_url_invalid():
 
 
 @pytest.mark.asyncio
+async def test_handle_message_awaiting_svg_url():
+    # Mock Update and Context
+    update = AsyncMock()
+    context = AsyncMock()
+    context.user_data = {"state": UserState.SVG_URL_AWAITING_URL}
+    test_url = "https://example.com"
+    update.message.text = test_url
+    update.message.reply_document = AsyncMock()  # Mock the async method
+
+    # Mock realistic PNG-like data for the QR code
+    mock_qr = await generate_url_qr(URLQR(url=test_url), svg=True)
+    with patch("app.qrcodegen.generate_url_qr", new=AsyncMock(return_value=mock_qr)):
+        # Call the handle_message function
+        await handle_message(update, context)
+
+    # Assert by content
+    assert update.message.reply_document.call_count == 1
+    actual_call = update.message.reply_document.call_args[1]["document"]
+    assert actual_call.getvalue() == mock_qr.getvalue()
+
+    # Optionally check the caption as well
+    update.message.reply_document.assert_called_once_with(
+        document=actual_call, caption="Here is your QR code!"
+    )
+
+
+@pytest.mark.asyncio
+async def test_handle_message_awaiting_svg_url_invalid():
+
+    # Mock Update and Context
+    update = AsyncMock()
+    context = AsyncMock()
+    context.user_data = {"state": UserState.SVG_URL_AWAITING_URL}
+    test_url = "invalid-url.com"
+    update.message.text = test_url
+
+    await handle_message(update, context)
+    assert context.user_data["state"] == UserState.SVG_URL_AWAITING_URL
+    # Assert that the bot sends an error message
+    update.message.reply_text.assert_called_once_with(
+        "❌ Invalid URL. Please send a valid URL starting with 'http://' or 'https://'."
+    )
+
+
+@pytest.mark.asyncio
 async def test_handle_message_awaiting_ssid():
     # Mock Update and Context
     update = AsyncMock()
