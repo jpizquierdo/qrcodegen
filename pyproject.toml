@@ -7,7 +7,9 @@ dependencies = [
     "qrcode[pil]==8.0",
     "pydantic-settings==2.8.1",
     "pydantic[email]==2.11.1",
-    "logfire[system-metrics]==3.12.0",
+    "opentelemetry-api==1.31.1",
+    "opentelemetry-sdk==1.31.1",
+    "opentelemetry-exporter-otlp-proto-http==1.31.1",
 ]
 
 [dependency-groups]

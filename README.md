@@ -77,20 +77,35 @@ If you prefer to use docker run sentence and build the image yourself follow the
 
 ## Observability (Optional)
 
-This project includes optional observability features powered by [Pydantic Logfire](https://logfire.pydantic.dev/docs/). You can enable logging and tracing by configuring the following environment variables in your `.env` file:
-
-```env
-LOGFIRE_ENABLED=true
-LOGFIRE_TOKEN="your_logfire_token"
-```
+This project includes optional observability features powered by [OpenTelemetry](https://opentelemetry.io/). Traces and logs are exported via OTLP HTTP and work with any compatible backend (Grafana Cloud, Jaeger, Honeycomb, a local OpenTelemetry Collector, etc.).
 
 ### How to Enable Observability
-1. Set `LOGFIRE_ENABLED` to `true` in your `.env` file.
-2. Provide your Logfire token in the `LOGFIRE_TOKEN` variable.
 
-When enabled, the bot will log events and traces to Logfire, providing insights into its runtime behavior and performance.
+Set the following variables in your `.env` file:
 
-> **Note:** Observability is disabled by default. If `LOGFIRE_ENABLED` is set to `false` or the `LOGFIRE_TOKEN` is not provided, the bot will use a no-op logger as a fallback.
+```env
+OTEL_ENABLED=true
+OTEL_EXPORTER_OTLP_ENDPOINT="http://localhost:4318"
+# Optional: auth headers as comma-separated key=value pairs
+# OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic <token>"
+```
+
+`OTEL_EXPORTER_OTLP_ENDPOINT` and `OTEL_EXPORTER_OTLP_HEADERS` are [standard OpenTelemetry environment variables](https://opentelemetry.io/docs/specs/otel/protocol/exporter/) read directly by the SDK.
+
+#### Example: Grafana Cloud
+
+1. Go to your Grafana Cloud stack → **OpenTelemetry** to get your OTLP endpoint.
+2. Create an API key with **MetricsPublisher** and **LogsPublisher** roles.
+3. Base64-encode your credentials: `echo -n "INSTANCE_ID:API_KEY" | base64`
+4. Set the variables:
+
+```env
+OTEL_ENABLED=true
+OTEL_EXPORTER_OTLP_ENDPOINT="https://otlp-gateway-prod-<region>.grafana.net/otlp"
+OTEL_EXPORTER_OTLP_HEADERS="Authorization=Basic <base64(INSTANCE_ID:API_KEY)>"
+```
+
+> **Note:** Observability is disabled by default (`OTEL_ENABLED=false`). When disabled, a no-op tracer is used automatically with no performance overhead.
 
 ## Contributing
 
