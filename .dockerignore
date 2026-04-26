@@ -1,6 +1,4 @@
 # Exclude test-related files and directories
-pytest.ini
-requirements-test.txt
 tests/
 .pytest_cache/
 .coverage
